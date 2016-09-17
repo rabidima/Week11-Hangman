@@ -1,132 +1,91 @@
-(function () {
-    "use strict";
-    var availableLetters, words, guessInput, guess, guessButton, lettersGuessed, lettersMatched, output, man, letters, lives, currentWord, numLettersMatched, messages;
+// o   main.js will contain the logic of your app. 
+// Running it in Terminal/Bash will start the game.
+//
+// main.js: main file requires prompt and word.js
 
-    function setup() {
-        /* start config options */
-        availableLetters = "abcdefghijklmnopqrstuvwxyz";
-        lives = 5;
-        words = ["cat", "dog", "cow", "reindeer"];
-        messages = {
-            win: 'You win!',
-            lose: 'Game over!',
-            guessed: ' already guessed, please try again...',
-            validLetter: 'Please enter a letter from A-Z'
-        };
-        /* end config options */
+// game object:  main game logic.
+// game.wordbank: can have word bank of different words.
+// game.wordsWon
+// wordsWon : integer that tracks how many words have been guessed correctly.
 
-        lettersGuessed = lettersMatched = '';
-        numLettersMatched = 0;
+// game.guessesRemaining : integer for guesses per word
 
-        /* choose a word */
-        currentWord = words[Math.floor(Math.random() * words.length)];
+// game.currentWrd : the word object
 
-        /* make #man and #output blank, create vars for later access */
-        output = document.getElementById("output");
-        man = document.getElementById("man");
-        guessInput = document.getElementById("letter");
+// game.startGame : method to start game. takes in a word object. 
+// Reset guesses remaining using resetGuessesRemaining. 
+// Get random word from word bank in game.js. 
 
-        man.innerHTML = 'You have ' + lives + ' lives remaining';
-        output.innerHTML = '';
+// Populate currentWrd (made from Word constructor function) object with letters.
+// Continue prompting user with this.keepPromptingUser.
+// game.resetGuessesRemaining : resets guesses remaining to the default amount
 
-        document.getElementById("letter").value = '';
+// game.keepPromptingUser : uses prompt module and get method to retrieve and store letter user inputs. 
 
-        /* make sure guess button is enabled */
-        guessButton = document.getElementById("guess");
-        guessInput.style.display = 'inline';
-        guessButton.style.display = 'inline';
+// Output the letter guessed to terminal. Check if letter was found using checkIfLetterFound() and save the value into a variable. 
+// Use the variable to check If the user guessed incorrectly minus the number of guesses they have left via console.log. 
+// If they guessed the letter correctly, then congratulate them via console.log. 
+// if they guessed the word correctly, congratulate them on winning and return to exit game. 
 
-        /* set up display of letters in current word */
-        letters = document.getElementById("letters");
-        letters.innerHTML = '<li class="current-word">Current word:</li>';
+// Render the word using wordRender() and display letters user has guessed already.  
+// if guessesRemaining is greater than 0 and word has not been found, use keepPromptingUser(). 
+//     Otherwise, end the game and log out what the answer was.
 
-        var letter, i;
-        for (i = 0; i < currentWord.length; i++) {
-            letter = '<li class="letter letter' + currentWord.charAt(i).toUpperCase() + '">' + currentWord.charAt(i).toUpperCase() + '</li>';
-            letters.insertAdjacentHTML('beforeend', letter);
-        }
-    }
+var Letter = require('./letter.js');
+var chosenWord = require('./game.js');
+var inquirer = require("inquirer");
 
-    function gameOver(win) {
-        if (win) {
-            output.innerHTML = messages.win;
-            output.classList.add('win');
-        } else {
-            output.innerHTML = messages.lose;
-            output.classList.add('error');
-        }
 
-        guessInput.style.display = guessButton.style.display = 'none';
-        guessInput.value = '';
-    }
+var inputLetter = function(){
 
-    /* Start game - should ideally check for existing functions attached to window.onload */
-    window.onload = setup();
+	console.log("\nGuess a letter\n");
+		console.log(chosenWord);
 
-    /* buttons */
-    document.getElementById("restart").onclick = setup;
 
-    /* reset letter to guess on click */
-    guessInput.onclick = function () {
-        this.value = '';
-    };
+	inquirer.prompt([{
+	name: "letter",
+	message: "Type the letter",
 
-    /* main guess function when user clicks #guess */
-    document.getElementById('hangman').onsubmit = function (e) {
-        if (e.preventDefault) e.preventDefault();
-        output.innerHTML = '';
-        output.classList.remove('error', 'warning');
-        guess = guessInput.value;
+}]).then(function(answers) {
+// run the constracter
+		// var tryLetter = new updateGuesses('')
 
-        /* does guess have a value? if yes continue, if no, error */
-        if (guess) {
-            /* is guess a valid letter? if so carry on, else error */
-            if (availableLetters.indexOf(guess) > -1) {
-                /* has it been guessed (missed or matched) already? if so, abandon & add notice */
-                if ((lettersMatched && lettersMatched.indexOf(guess) > -1) || (lettersGuessed && lettersGuessed.indexOf(guess) > -1)) {
-                    output.innerHTML = '"' + guess.toUpperCase() + '"' + messages.guessed;
-                    output.classList.add("warning");
-                }
-                /* does guess exist in current word? if so, add to letters already matched, if final letter added, game over with win message */
-                else if (currentWord.indexOf(guess) > -1) {
-                    var lettersToShow;
-                    lettersToShow = document.querySelectorAll(".letter" + guess.toUpperCase());
+		console.log("\nanswer\n");
+		
 
-                    for (var i = 0; i < lettersToShow.length; i++) {
-                        lettersToShow[i].classList.add("correct");
-                    }
+})
+};
+inputLetter();
 
-                    /* check to see if letter appears multiple times */
-                    for (var j = 0; j < currentWord.length; j++) {
-                        if (currentWord.charAt(j) === guess) {
-                            numLettersMatched += 1;
-                        }
-                    }
 
-                    lettersMatched += guess;
-                    if (numLettersMatched === currentWord.length) {
-                        gameOver(true);
-                    }
-                }
-                /* guess doesn't exist in current word and hasn't been guessed before, add to lettersGuessed, reduce lives & update user */
-                else {
-                    lettersGuessed += guess;
-                    lives--;
-                    man.innerHTML = 'You have ' + lives + ' lives remaining';
-                    if (lives === 0) gameOver();
-                }
-            }
-            /* not a valid letter, error */
-            else {
-                output.classList.add('error');
-                output.innerHTML = messages.validLetter;
-            }
-        }
-        /* no letter entered, error */
-        else {
-            output.classList.add('error');
-            output.innerHTML = messages.validLetter;
-        }
-        return false;
-    };
-}());
+// var lettersBank = new Word('Dima');
+// console.log(lettersBank.isLetter('D'));
+// console.log(lettersBank.getOrder('d'));
+
+// console.log(lettersBank.getLetter());
+// console.log(lettersBank.isALetter());
+
+// console.log('get letter', lettersBank.getLetter());
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// end
